@@ -4,31 +4,45 @@ import com.sun.jna.platform.win32.WinDef;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
 public class OrderAutomation {
 
-    public static void main(String[] args) throws IOException, AWTException {
-        // Проверка и переключение раскладки клавиатуры на английскую
+    public void processFile(int choice, String excelFilePath) throws IOException, AWTException {
         System.out.println("Проверка текущей раскладки клавиатуры.");
-
         KeyboardLayoutManager.ensureEnglishLayout();
 
-        // Путь к файлу Excel
-        String excelFilePath = "C:\\Users\\andru\\Documents\\AB-Nummer.xlsx";
         System.out.println("Открытие файла Excel: " + excelFilePath);
 
         try (FileInputStream fileInputStream = new FileInputStream(new File(excelFilePath));
              Workbook workbook = new XSSFWorkbook(fileInputStream)) {
 
-            // Получаем первый лист из файла Excel
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Название окна, с которым будет работать программа
-            String windowTitle = "Lutz1 MMB (Standard.zoc)";
+            Row firstRow = sheet.getRow(0);
+            if (firstRow == null) {
+                System.out.println("Файл Excel пустой. Завершение работы программы.");
+                return;
+            }
+
+            int columnCount = firstRow.getLastCellNum();
+            if (choice == 1 && columnCount < 3) {
+                System.out.println("Таблица не соответствует формату обработки заказов. Ожидается 3 и более колонки.");
+                return;
+            } else if ((choice == 2 || choice == 3) && columnCount != 2) {
+                System.out.println("Таблица не соответствует формату обработки комментариев. Ожидается 2 колонки.");
+                return;
+            } else if (choice == 4 && columnCount != 3) {
+                System.out.println("Таблица не соответствует формату обработки дат поставки. Ожидается 3 колонки.");
+                return;
+            }
+
+            String windowTitle = "Lutz1 MMB Z (Standard.zoc)";
             System.out.println("Поиск окна ZOC с заголовком: " + windowTitle);
             WinDef.HWND hwnd = MyUser32.INSTANCE.FindWindowA(null, windowTitle);
 
@@ -37,20 +51,52 @@ public class OrderAutomation {
                 return;
             }
 
-            // Активация найденного окна ZOC
             System.out.println("Окно ZOC найдено. Активация окна.");
             Robot robot = new Robot();
+
+            WinDef.HWND foregroundWindow = MyUser32.INSTANCE.GetForegroundWindow();
+            if (!foregroundWindow.equals(hwnd)) {
+                System.out.println("Текущее активное окно отличается. Переключение на окно ZOC.");
+                robot.keyPress(KeyEvent.VK_ALT);
+                robot.keyPress(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_ALT);
+
+                robot.delay(1000);
+            }
+
             MyUser32.INSTANCE.SetForegroundWindow(hwnd);
 
-            // Создание экземпляра OrderProcessor для обработки строк из Excel
-            OrderProcessor orderProcessor = new OrderProcessor(robot, windowTitle);
-
-            // Обработка каждой строки в листе Excel
-            for (Row row : sheet) {
-                orderProcessor.processOrder(row);
+            if (choice == 1) {
+                OrderProcessor orderProcessor = new OrderProcessor(robot);
+                for (Row row : sheet) {
+                    orderProcessor.processOrder(row);
+                }
+            } else if (choice == 2) {
+                CommentProcessor commentProcessor = new CommentProcessor(robot);
+                for (Row row : sheet) {
+                    commentProcessor.processComment(row);
+                }
+            } else if (choice == 3) {
+                LagerbestellungProcessor lagerProcessor = new LagerbestellungProcessor(robot);
+                for (Row row : sheet) {
+                    lagerProcessor.processLagerComment(row);
+                }
+            } else if (choice == 4) {
+                DeliveryDateProcessor deliveryDateProcessor = new DeliveryDateProcessor(robot);
+                for (Row row : sheet) {
+                    deliveryDateProcessor.processDeliveryDate(row);
+                }
             }
         }
 
-        System.out.println("Все заказы обработаны. Закрытие файла Excel.");
+        System.out.println("Все заказы/комментарии обработаны. Закрытие файла Excel.");
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            OrderAutomationGUI gui = new OrderAutomationGUI();
+            gui.setVisible(true);
+        });
     }
 }
