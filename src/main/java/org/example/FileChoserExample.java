@@ -1,23 +1,49 @@
 package org.example;
 
-import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+import javafx.application.Application;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser.ExtensionFilter;
 
-import javax.swing.*;
 import java.io.File;
 
-public class FileChoserExample {
+public class FileChoserExample extends Application {
 
-    public static void showFileChooser(JFrame parentFrame, JTextField filePathField) {
-        JFXPanel fxPanel = new JFXPanel(); // Инициализация JavaFX среды
-        Platform.runLater(() -> {
-            FileChooser fileChooser = new FileChooser();
-            File file = fileChooser.showOpenDialog(new Stage());
-            if (file != null) {
-                filePathField.setText(file.getAbsolutePath()); // Устанавливаем путь в текстовое поле
-            }
-        });
+    private TextField filePathField;
+
+    @Override
+    public void start(Stage primaryStage) {
+        // Создаем элементы интерфейса
+        filePathField = new TextField();
+        filePathField.setPromptText("Выберите файл");
+
+        Button browseButton = new Button("Обзор");
+        browseButton.setOnAction(e -> showFileChooser(primaryStage));
+
+        VBox vbox = new VBox(10, filePathField, browseButton);
+        vbox.setPadding(new javafx.geometry.Insets(10));
+
+        Scene scene = new Scene(vbox, 400, 200);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("File Chooser Example");
+        primaryStage.show();
+    }
+
+    private void showFileChooser(Stage primaryStage) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new ExtensionFilter("Excel Files", "*.xlsx"));
+
+        File file = fileChooser.showOpenDialog(primaryStage);
+        if (file != null) {
+            filePathField.setText(file.getAbsolutePath()); // Устанавливаем путь в текстовое поле
+        }
+    }
+
+    public static void main(String[] args) {
+        launch(args);
     }
 }

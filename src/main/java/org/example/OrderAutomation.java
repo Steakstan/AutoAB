@@ -1,10 +1,12 @@
 package org.example;
 
 import com.sun.jna.platform.win32.WinDef;
-import org.apache.poi.ss.usermodel.*;
+import javafx.application.Application;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -13,7 +15,8 @@ import java.io.IOException;
 
 public class OrderAutomation {
 
-    public void processFile(int choice, String excelFilePath) throws IOException, AWTException {
+    public void processFile(int choice, String excelFilePath) throws IOException, AWTException, InterruptedException {
+        // Ваш существующий код обработки файла Excel
         System.out.println("Проверка текущей раскладки клавиатуры.");
         KeyboardLayoutManager.ensureEnglishLayout();
 
@@ -94,9 +97,6 @@ public class OrderAutomation {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            OrderAutomationGUI gui = new OrderAutomationGUI();
-            gui.setVisible(true);
-        });
+        Application.launch(OrderAutomationGUIFX.class, args); // Запуск JavaFX приложения
     }
 }

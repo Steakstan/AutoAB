@@ -8,47 +8,40 @@ import java.awt.event.KeyEvent;
 
 public class KeyboardLayoutManager {
 
-    public static void ensureEnglishLayout() throws AWTException {
+    private static final Object lock = new Object();
+    private static boolean isEnglishLayout = false;
+
+    public static void ensureEnglishLayout() throws AWTException, InterruptedException {
         Robot robot = new Robot();
-        WinDef.HWND hwnd = MyUser32.INSTANCE.GetForegroundWindow(); // Получаем текущее активное окно
+        WinDef.HWND hwnd = MyUser32.INSTANCE.GetForegroundWindow();
 
-        String currentLayoutId = getCurrentLayoutId(hwnd);
-
-        // Цикл, который будет продолжаться, пока раскладка не станет английской
-        while (!isCurrentLayoutEnglish(currentLayoutId)) {
-            System.out.println("Текущая раскладка не является английской. Переключение раскладки.");
-            pressAltShift(robot);
-            try {
-                // Даем немного времени системе переключить раскладку
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("Поток был прерван.");
+        synchronized (lock) {
+            while (!isEnglishLayout) {
+                String currentLayoutId = getCurrentLayoutId(hwnd);
+                if (isCurrentLayoutEnglish(currentLayoutId)) {
+                    isEnglishLayout = true;
+                    lock.notifyAll(); // Уведомляем все ожидающие потоки
+                } else {
+                    System.out.println("Текущая раскладка не является английской. Переключение раскладки.");
+                    pressAltShift(robot);
+                    lock.wait(1000); // Ждем 1 секунду
+                }
             }
-
-            // Повторная проверка после переключения раскладки
-            currentLayoutId = getCurrentLayoutId(hwnd);
-            System.out.println("Проверка раскладки после переключения: " + currentLayoutId);
         }
-
         System.out.println("Раскладка успешно переключена на английскую.");
     }
 
     private static String getCurrentLayoutId(WinDef.HWND hwnd) {
-        int threadId = MyUser32.INSTANCE.GetWindowThreadProcessId(hwnd, null); // Получаем ID потока активного окна
-        WinDef.HKL currentLayout = MyUser32.INSTANCE.GetKeyboardLayout(threadId); // Получаем раскладку для потока
+        int threadId = MyUser32.INSTANCE.GetWindowThreadProcessId(hwnd, null);
+        WinDef.HKL currentLayout = MyUser32.INSTANCE.GetKeyboardLayout(threadId);
         long currentLayoutValue = Pointer.nativeValue(currentLayout.getPointer());
         return String.format("%08X", currentLayoutValue);
     }
 
     private static boolean isCurrentLayoutEnglish(String layoutId) {
-        System.out.println("Текущая раскладка: " + layoutId); // Логирование текущей раскладки
-
-        // Проверяем, является ли текущая раскладка одной из английских
-        return layoutId.startsWith("00000409") || // Английская (US)
-                layoutId.equals("04090409") ||
-                layoutId.equals("04090809") || // Английская (UK)
-                layoutId.equals("08090809");  // Английская (другая версия)
+        System.out.println("Текущая раскладка: " + layoutId);
+        return layoutId.startsWith("00000409") || layoutId.equals("04090409") ||
+                layoutId.equals("04090809") || layoutId.equals("08090809");
     }
 
     private static void pressAltShift(Robot robot) {
