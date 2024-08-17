@@ -19,7 +19,7 @@ public class OrderAutomationGUIFX extends Application {
     private ComboBox<String> operationComboBox;
     private TextField filePathField;
     private OrderAutomation automation;
-    private boolean isGerman = true; // Флаг для отслеживания текущего языка
+    private LanguageManager languageManager; // Новый объект для управления языками
 
     // Переменные для хранения смещения при перетаскивании окна
     private double offsetX, offsetY;
@@ -30,10 +30,11 @@ public class OrderAutomationGUIFX extends Application {
     @Override
     public void start(Stage primaryStage) {
         automation = new OrderAutomation();
+        languageManager = new LanguageManager(); // Инициализация LanguageManager
 
         // Основной контейнер
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #0B0B0B; -fx-border-radius: 20px;");
+        root.getStyleClass().add("root");
 
         // Панель заголовка
         HBox titleBar = createTitleBar(primaryStage);
@@ -45,6 +46,7 @@ public class OrderAutomationGUIFX extends Application {
 
         // Создание сцены и установка на Stage
         Scene scene = new Scene(root, 500, 220);
+        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         primaryStage.setScene(scene);
         primaryStage.setTitle("Order Automation");
         primaryStage.initStyle(javafx.stage.StageStyle.TRANSPARENT); // Убираем стандартный заголовок
@@ -57,7 +59,7 @@ public class OrderAutomationGUIFX extends Application {
     // Создание панели заголовка
     private HBox createTitleBar(Stage stage) {
         HBox titleBar = new HBox();
-        titleBar.setStyle("-fx-background-color: #212121; -fx-alignment: center-right; -fx-padding: 0 5 0 5;");
+        titleBar.getStyleClass().add("title-bar");
 
         Button minimizeButton = createTitleButton("−", event -> stage.setIconified(true));
         Button closeButton = createTitleButton("×", event -> System.exit(0));
@@ -74,9 +76,9 @@ public class OrderAutomationGUIFX extends Application {
         VBox contentPanel = new VBox(10);
         contentPanel.setPadding(new Insets(10));
         contentPanel.setAlignment(Pos.CENTER_LEFT);
-        contentPanel.setStyle("-fx-background-color: #0B0B0B;");
+        contentPanel.getStyleClass().add("content-panel");
 
-        Label operationLabel = createLabel("Wählen Sie den Verarbeitungstyp:");
+        Label operationLabel = createLabel(languageManager.getText("operationLabel"));
         operationComboBox = new ComboBox<>();
         operationComboBox.getItems().addAll(
                 "AB-Verarbeitung",
@@ -84,22 +86,22 @@ public class OrderAutomationGUIFX extends Application {
                 "Kommentare für Lagerbestellung verarbeiten",
                 "Liefertermine verarbeiten"
         );
-        operationComboBox.setStyle("-fx-background-color: #282828; -fx-text-fill: white;");
+        operationComboBox.getStyleClass().add("combo-box");
 
         HBox fileSelectionBox = new HBox(10);
         fileSelectionBox.setAlignment(Pos.CENTER_LEFT);
 
-        Label filePathLabel = createLabel("Wählen Sie die Excel-Datei:");
+        Label filePathLabel = createLabel(languageManager.getText("filePathLabel"));
         filePathField = new TextField();
-        filePathField.setStyle("-fx-background-color: #212121; -fx-text-fill: white;");
+        filePathField.getStyleClass().add("text-field");
         filePathField.setPrefWidth(300);
 
-        Button browseButton = createRoundedButton("Durchsuchen");
+        Button browseButton = createRoundedButton(languageManager.getText("browseButton"));
         browseButton.setOnAction(e -> showFileChooser());
 
         fileSelectionBox.getChildren().addAll(filePathField, browseButton);
 
-        Button startButton = createRoundedButton("Verarbeitung starten");
+        Button startButton = createRoundedButton(languageManager.getText("startButton"));
         startButton.setOnAction(e -> startProcessing());
 
         contentPanel.getChildren().addAll(operationLabel, operationComboBox, filePathLabel, fileSelectionBox, startButton);
@@ -111,7 +113,7 @@ public class OrderAutomationGUIFX extends Application {
     private void showFileChooser() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel Files", "*.xlsx"));
-        fileChooser.setTitle("Wählen Sie eine Excel-Datei");
+        fileChooser.setTitle(languageManager.getText("fileChooserTitle"));
         java.io.File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
             filePathField.setText(selectedFile.getAbsolutePath());
@@ -124,35 +126,31 @@ public class OrderAutomationGUIFX extends Application {
         String filePath = filePathField.getText();
 
         if (filePath.isEmpty()) {
-            showAlert(Alert.AlertType.ERROR, "Fehler", "Bitte wählen Sie eine Excel-Datei aus.");
+            showAlert(Alert.AlertType.ERROR, languageManager.getText("errorTitle"), languageManager.getText("errorMessage"));
             return;
         }
 
         try {
             automation.processFile(choice, filePath);
-            showAlert(Alert.AlertType.INFORMATION, "Erfolg", "Die Verarbeitung wurde erfolgreich abgeschlossen.");
+            showAlert(Alert.AlertType.INFORMATION, languageManager.getText("successTitle"), languageManager.getText("successMessage"));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error during file processing", e);
-            showAlert(Alert.AlertType.ERROR, "Fehler", "Fehler bei der Verarbeitung der Datei.");
+            showAlert(Alert.AlertType.ERROR, languageManager.getText("errorTitle"), languageManager.getText("processingErrorMessage"));
         }
     }
 
     // Создание кнопки с округлыми углами
     private Button createRoundedButton(String text) {
         Button button = new Button(text);
-        button.setStyle("-fx-background-color: #282828; -fx-text-fill: white; -fx-padding: 5 20 5 20;");
+        button.getStyleClass().add("rounded-button");
         button.setShape(new Rectangle(20, 20));
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #373737; -fx-text-fill: white; -fx-padding: 5 20 5 20;"));
-        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: #282828; -fx-text-fill: white; -fx-padding: 5 20 5 20;"));
         return button;
     }
 
     // Создание кнопок заголовка (закрытие и сворачивание)
     private Button createTitleButton(String text, javafx.event.EventHandler<javafx.event.ActionEvent> handler) {
         Button button = new Button(text);
-        button.setStyle("-fx-background-color: transparent; -fx-text-fill: gray; -fx-padding: 0 5 0 5;");
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: transparent; -fx-text-fill: #FF0000; -fx-padding: 0 5 0 5;"));
-        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: transparent; -fx-text-fill: gray; -fx-padding: 0 5 0 5;"));
+        button.getStyleClass().add("title-button");
         button.setOnAction(handler);
         return button;
     }
@@ -160,7 +158,7 @@ public class OrderAutomationGUIFX extends Application {
     // Создание метки
     private Label createLabel(String text) {
         Label label = new Label(text);
-        label.setStyle("-fx-text-fill: white;");
+        label.getStyleClass().add("label-white");
         return label;
     }
 
@@ -187,9 +185,8 @@ public class OrderAutomationGUIFX extends Application {
     }
 
     // Переключение языка интерфейса
-    // Переключение языка интерфейса
     private void toggleLanguage() {
-        isGerman = !isGerman;
+        languageManager.toggleLanguage();
 
         // Получаем панель контента
         VBox contentPanel = (VBox) ((BorderPane) operationComboBox.getScene().getRoot()).getCenter();
@@ -198,12 +195,12 @@ public class OrderAutomationGUIFX extends Application {
             // Переводим метку "Wählen Sie den Verarbeitungstyp:"
             Node node1 = contentPanel.getChildren().get(0);
             if (node1 instanceof Label operationLabel) {
-                operationLabel.setText(isGerman ? "Wählen Sie den Verarbeitungstyp:" : "Виберіть тип обробки:");
+                operationLabel.setText(languageManager.getText("operationLabel"));
             }
 
             // Переводим элементы ComboBox
             operationComboBox.getItems().setAll(
-                    isGerman
+                    languageManager.isGerman()
                             ? new String[]{"AB-Verarbeitung", "Kommentare verarbeiten", "Kommentare für Lagerbestellung verarbeiten", "Liefertermine verarbeiten"}
                             : new String[]{"Обробка AB", "Обробка коментарів", "Обробка коментарів для замовлення на склад", "Обробка термінів поставки"}
             );
@@ -211,24 +208,22 @@ public class OrderAutomationGUIFX extends Application {
             // Переводим метку "Wählen Sie die Excel-Datei:"
             Node node2 = contentPanel.getChildren().get(2);
             if (node2 instanceof Label filePathLabel) {
-                filePathLabel.setText(isGerman ? "Wählen Sie die Excel-Datei:" : "Виберіть файл Excel:");
+                filePathLabel.setText(languageManager.getText("filePathLabel"));
             }
 
             // Переводим кнопку "Verarbeitung starten"
             Node node3 = contentPanel.getChildren().get(4);
             if (node3 instanceof Button startButton) {
-                startButton.setText(isGerman ? "Verarbeitung starten" : "Запустити обробку");
+                startButton.setText(languageManager.getText("startButton"));
             }
 
             // Переводим кнопку "Durchsuchen"
             Node node4 = ((HBox) contentPanel.getChildren().get(3)).getChildren().get(1);
             if (node4 instanceof Button browseButton) {
-                browseButton.setText(isGerman ? "Durchsuchen" : "Огляд");
+                browseButton.setText(languageManager.getText("browseButton"));
             }
         }
     }
-
-
 
     public static void main(String[] args) {
         launch(args);

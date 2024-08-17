@@ -1,0 +1,52 @@
+/* Стили для основного контейнера */
+.root {
+    -fx-background-color: #0B0B0B;
+    -fx-border-radius: 20px;
+}
+
+/* Стили для панели заголовка */
+.title-bar {
+    -fx-background-color: #212121;
+    -fx-alignment: center-right;
+    -fx-padding: 0 5 0 5;
+}
+
+/* Стили для кнопок заголовка */
+.title-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: gray;
+    -fx-padding: 0 5 0 5;
+}
+
+.title-button:hover {
+    -fx-text-fill: #FF0000;
+}
+
+/* Стили для панели основного контента */
+.content-panel {
+    -fx-background-color: #0B0B0B;
+}
+
+.label-white {
+    -fx-text-fill: white;
+}
+
+.combo-box {
+    -fx-background-color: #282828;
+    -fx-text-fill: white;
+}
+
+.text-field {
+    -fx-background-color: #212121;
+    -fx-text-fill: white;
+}
+
+.rounded-button {
+    -fx-background-color: #282828;
+    -fx-text-fill: white;
+    -fx-padding: 5 20 5 20;
+}
+
+.rounded-button:hover {
+    -fx-background-color: #373737;
+}

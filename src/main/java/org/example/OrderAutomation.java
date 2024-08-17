@@ -16,10 +16,6 @@ import java.io.IOException;
 public class OrderAutomation {
 
     public void processFile(int choice, String excelFilePath) throws IOException, AWTException, InterruptedException {
-        // Ваш существующий код обработки файла Excel
-        System.out.println("Проверка текущей раскладки клавиатуры.");
-        KeyboardLayoutManager.ensureEnglishLayout();
-
         System.out.println("Открытие файла Excel: " + excelFilePath);
 
         try (FileInputStream fileInputStream = new FileInputStream(new File(excelFilePath));
@@ -57,18 +53,12 @@ public class OrderAutomation {
             System.out.println("Окно ZOC найдено. Активация окна.");
             Robot robot = new Robot();
 
-            WinDef.HWND foregroundWindow = MyUser32.INSTANCE.GetForegroundWindow();
-            if (!foregroundWindow.equals(hwnd)) {
-                System.out.println("Текущее активное окно отличается. Переключение на окно ZOC.");
-                robot.keyPress(KeyEvent.VK_ALT);
-                robot.keyPress(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_ALT);
-
-                robot.delay(1000);
-            }
-
             MyUser32.INSTANCE.SetForegroundWindow(hwnd);
+            robot.delay(1000);  // Задержка для надежности
+
+            // Проверяем и переключаем раскладку после активации окна
+            System.out.println("Проверка текущей раскладки клавиатуры.");
+            KeyboardLayoutManager.ensureEnglishLayout(hwnd);
 
             if (choice == 1) {
                 OrderProcessor orderProcessor = new OrderProcessor(robot);
